@@ -49,6 +49,8 @@ final class UserController{
         return try drop.view.make("login")
     }
     
+   
+    
     func registerData(request: Request) throws -> ResponseRepresentable{
         guard let username = request.formURLEncoded?["username"]?.string,
             let password = request.formURLEncoded?["password"]?.string else {
@@ -57,8 +59,8 @@ final class UserController{
         let credentials = UsernamePassword(username: username, password: password)
         
         do {
-            var mainuser = try MainUser.register(credentials: credentials)
-            print(mainuser)
+            _ = try MainUser.register(credentials: credentials)
+          
             //try request.auth.login(credentials)
             //change response
             return Response(redirect: "/")
@@ -78,7 +80,7 @@ final class UserController{
             try _ = MainUser.authenticate(credentials: credentials)
             //try request.auth.login(credentials)
             return Response(redirect: "/")
-        } catch let e {
+        } catch _ {
             return try drop.view.make("login", ["flash": "Invalid username or password"])
         }
     }

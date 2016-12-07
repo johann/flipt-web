@@ -34,8 +34,14 @@ final class APIController {
             
         }
         
+        drop.group("api"){ api in
+            api.post("register", handler: registerJSON)
+            api.post("login", handler: loginJSON)
+        }
+        
     }
     
+    //Route Functions
     func userbooks(request:Request, id:Int) throws -> ResponseRepresentable{
         let books = try Book.query().filter("mainuser_id", id).all()
         
@@ -61,7 +67,6 @@ final class APIController {
   
         return try JSON(node: foundbooks.makeNode())
     }
-    
     func search(request: Request) throws -> ResponseRepresentable{
      
         if let titlesearch = request.data["title"]?.string {
@@ -117,14 +122,57 @@ final class APIController {
         return try JSON(node: Book.all().makeNode())
     }
     
+    
+    func registerJSON(request: Request) throws -> ResponseRepresentable{
+        
+        guard let username = request.json?["username"]?.string, let password = request.json?["password"]?.string else {
+            throw Abort.badRequest
+        }
+
+        let credentials = UsernamePassword(username: username, password: password)
+        
+        do {
+            let user = try MainUser.register(credentials: credentials)
+            
+            return try JSON(node: user.makeNode() )
+            //try request.auth.login(credentials)
+            //change response
+           // return Response(redirect: "/")
+        } catch let e as TurnstileError {
+            return try drop.view.make("register", Node(node: ["flash": e.description]))
+        }
+        
+    }
+    
+    func loginJSON(request: Request) throws -> ResponseRepresentable{
+        guard let username = request.json?["username"]?.string, let password = request.json?["password"]?.string else {
+            throw Abort.badRequest
+        }
+
+        let credentials = UsernamePassword(username: username, password: password)
+        do {
+            let user = try MainUser.authenticate(credentials: credentials)
+            //try request.auth.login(credentials)
+            return try JSON(node: user.makeNode())
+        } catch let e {
+            return try drop.view.make("login", ["flash": "Invalid username or password - \(e)"])
+        }
+    }
+    
+    
+    
+}
+
+// MARK: - Helper Functions
+extension  APIController{
     func findBooks(within distance:Double, from myLat:Double, longitude myLong:Double, completion:([Book])->()){
         
         let radiusOfEarth = 6371.0
         let angularRadius = distance/radiusOfEarth
         print(myLat)
         print(myLong)
-//        let lat = 0.0
-//        let long = 0.0
+        //        let lat = 0.0
+        //        let long = 0.0
         let minLat = myLat - angularRadius
         let maxLat = myLat + angularRadius
         
@@ -134,12 +182,15 @@ final class APIController {
         let minLong = myLong - deltalon
         let maxLong = myLong + deltalon
         
-        let postgreSQL = PostgreSQL.Database(dbname: "flipt", user: "johannkerr=", password: "")
-        do {
 
-            let books = try Book.query().filter("lat", Filter.Comparison.greaterThan, minLat).filter("lat", Filter.Comparison.lessThan, maxLat).filter("long", Filter.Comparison.greaterThan, minLong).all()
+        do {
             
-            print(books.count)
+            let books = try Book.query()
+                .filter("lat", Filter.Comparison.greaterThan, minLat)
+                .filter("lat", Filter.Comparison.lessThan, maxLat)
+                .filter("long", Filter.Comparison.greaterThan, minLong)
+                .filter("long", Filter.Comparison.lessThan, maxLong)
+                .all()
             
             var nearBooks = [Book]()
             for book in books {
@@ -147,7 +198,7 @@ final class APIController {
                 let booklong = book.long
                 print(acos(sin(myLat) * sin(booklat) + cos(myLat) * cos(booklat) * cos(booklong - (myLong))))
                 print(angularRadius)
-
+                
                 let deltaCheck = acos(sin(myLat) * sin(booklat) + cos(myLat) * cos(booklat) * cos(booklong - (myLong))) <= angularRadius
                 if deltaCheck{
                     print("hooray in range")
@@ -158,18 +209,10 @@ final class APIController {
             }
             
             completion(nearBooks)
-            
-//            let version = try postgreSQL.execute("SELECT version()")
-//            
-//            let results = try postgreSQL.execute("SELECT * FROM books WHERE (lat => $1 AND lat <= $2) AND (lon >= $3 AND lon <= $4) AND acos(sin($5) * sin(lat) + cos($5) * cos(lat) * cos(lon - ($6))) <= $7", [Node(minLat), Node(maxLat), Node(minLong), Node(maxLong), Node(myLat), Node(myLong), Node(angularRadius)])
-//            print(results)
-//            
-//            print(version)
         }catch{
             print("error")
         }
         
         
     }
-    
 }

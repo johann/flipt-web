@@ -98,11 +98,12 @@ final class MainUser: User{
             MainUser.userNameKey: username,
             MainUser.passwordKey: password,
             MainUser.apiKey:apiKeyID,
-            MainUser.apiSecret: apiKeySecret
+            MainUser.apiSecret: apiKeySecret,
+            "books": try books().makeNode()
             ])
     }
     
-    
+   
     static func prepare(_ database: Database) throws {
         try database.create("mainusers"){ users in
             users.id()
@@ -133,7 +134,11 @@ extension Request {
 
 extension String: Error {}
 
-
+extension MainUser{
+    func books() throws -> [Book]{
+        return try Book.query().filter("mainuser_id", id!).all()
+    }
+}
 extension MainUser {
     static let idKey = "id"
     static let userNameKey = "username"

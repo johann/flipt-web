@@ -59,6 +59,7 @@ final class Book: Model{
 
     }
     
+    
     func makeNode(context: Context) throws -> Node {
         
         return try Node(node: [
