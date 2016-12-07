@@ -96,7 +96,6 @@ final class MainUser: User{
         return try Node(node:[
             MainUser.idKey :id,
             MainUser.userNameKey: username,
-            MainUser.passwordKey: password,
             MainUser.apiKey:apiKeyID,
             MainUser.apiSecret: apiKeySecret
             ])
