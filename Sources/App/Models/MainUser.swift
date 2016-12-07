@@ -98,8 +98,7 @@ final class MainUser: User{
             MainUser.userNameKey: username,
             MainUser.passwordKey: password,
             MainUser.apiKey:apiKeyID,
-            MainUser.apiSecret: apiKeySecret,
-            "books": try books().makeNode()
+            MainUser.apiSecret: apiKeySecret
             ])
     }
     
