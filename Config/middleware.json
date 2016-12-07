@@ -1,0 +1,12 @@
+{
+    "server": [
+        "trustProxy",
+        "file",
+        "abort",
+        "sessions",
+        "auth"
+    ],
+    "client": [
+        
+    ]
+}
