@@ -117,9 +117,11 @@ extension Book {
         return try parent(mainuser_id)
     }
     
-    func findOwner() throws -> MainUser {
-        let owner = try MainUser.query().filter("id", self.mainuser_id!).first()
-        return owner!
+    func findOwner() throws -> MainUser? {
+        if let owner = try MainUser.query().filter("id", self.mainuser_id!).first() {
+            return owner
+        }
+        return nil
     }
     
 }
