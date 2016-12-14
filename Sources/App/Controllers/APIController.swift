@@ -42,33 +42,128 @@ final class APIController {
     }
     
     //Route Functions
+    
+    func respond(request: Request) throws -> ResponseRepresentable{
+        
+        return try JSON(node: request.user().makeNode())
+    }
+    
+ 
+    
+}
+
+//MARK:- Login
+
+extension APIController {
+    //MARK:- Register
+    func registerJSON(request: Request) throws -> ResponseRepresentable{
+        
+        guard let username = request.json?["username"]?.string, let password = request.json?["password"]?.string else {
+            throw Abort.badRequest
+        }
+        
+        let credentials = UsernamePassword(username: username, password: password)
+        
+        do {
+            let user = try MainUser.register(credentials: credentials)
+            
+            return try JSON(node: user.makeNode() )
+            //try request.auth.login(credentials)
+            //change response
+            // return Response(redirect: "/")
+        } catch let e as TurnstileError {
+            return try drop.view.make("register", Node(node: ["flash": e.description]))
+        }
+        
+    }
+    
+    //MARK:- Login
+    func loginJSON(request: Request) throws -> ResponseRepresentable{
+        guard let username = request.json?["username"]?.string, let password = request.json?["password"]?.string else {
+            throw Abort.badRequest
+        }
+        
+        
+        let credentials = UsernamePassword(username: username, password: password)
+        do {
+            let user = try MainUser.authenticate(credentials: credentials)
+            //try request.auth.login(credentials)
+            return try JSON(node: user.makeNode())
+        } catch let e {
+            return try drop.view.make("login", ["flash": "Invalid username or password - \(e)"])
+        }
+    }
+}
+
+
+//MARK:- Books
+
+extension APIController {
+    //MARK:- User Books
     func userbooks(request:Request, id:Int) throws -> ResponseRepresentable{
         let books = try Book.query().filter("mainuser_id", id).all()
         
         return try JSON(node: books.makeNode())
     }
-    func respond(request: Request) throws -> ResponseRepresentable{
+    
+    //MARK:- Add Book
+    
+    func addBook(request: Request) throws -> ResponseRepresentable{
         
-        return try JSON(node: request.user().makeNode())
+        let title = request.data["title"]?.string ?? ""
+        let isbn = request.data["isbn"]?.string ?? ""
+        let imgUrl = request.data["imgurl"]?.string ?? ""
+        let latitude = request.data["latitude"]?.double ?? 0.0
+        let longitude = request.data["longitude"]?.double ?? 0.0
+        let publisher = request.data["publisher"]?.string ?? ""
+        let author = request.data["author"]?.string ?? ""
+        let description = request.data["description"]?.string ?? ""
+        let publishYear = request.data["publishYear"]?.string ?? ""
+        
+        let owner = try request.user()
+        
+        var book = Book(title: title, isbn: isbn, imgUrl: imgUrl, lat: latitude, long: longitude, mainuser_id: owner.id!, publisher: publisher, author: author, description: description, publishYear: publishYear)
+        
+        try book.save()
+        
+        return try JSON(node: book.makeNode())
+        
     }
+    
+    //MARK:- Get Books
+    func myBooks(request: Request) throws -> ResponseRepresentable{
+        let user = try request.user()
+        if let userId = user.id{
+            
+            let books = try Book.query().filter("mainuser_id", userId).all()
+            return try JSON(node: books.makeNode())
+        }
+        
+        return try JSON(node: Book.all().makeNode())
+    }
+    
+    //MARK:- Near
+    
     func near(request:Request) throws -> ResponseRepresentable{
-       // 40.719503, -73.985142
+        // 40.719503, -73.985142
         var latitudeRadians = 0.0
         var longitudeRadians = 0.0
         if let latitude = request.data["lat"]?.double, let longitude = request.data["long"]?.double {
             latitudeRadians = latitude * M_PI/180
             longitudeRadians = longitude * M_PI/180
         }
- 
+        
         var foundbooks = [Book]()
         findBooks(within: 1609, from: latitudeRadians, longitude: longitudeRadians) { (books) in
             foundbooks = books
         }
-  
+        
         return try JSON(node: foundbooks.makeNode())
     }
+    
+    //MARK:- Search
     func search(request: Request) throws -> ResponseRepresentable{
-     
+        
         if let titlesearch = request.data["title"]?.string {
             print(titlesearch)
             let searchTerm = titlesearch.replacingOccurrences(of: "+", with: " ")
@@ -82,89 +177,13 @@ final class APIController {
         }
         return try JSON(node: [])
     }
-    func addBook(request: Request) throws -> ResponseRepresentable{
-        var title = ""
-        var isbn = ""
-        var imgUrl = ""
-        var latitude = 0.0
-        var longtitude = 0.0
-        if let titleString = request.data["title"]?.string {
-            title = titleString
-        }
-        if let isbnString = request.data["isbn"]?.string {
-            isbn = isbnString
-        }
-        if let imgUrlString = request.data["imgurl"]?.string {
-            imgUrl = imgUrlString
-        }
-        if let latDouble = request.data["latitude"]?.double{
-            latitude = latDouble
-        }
-        if let longDouble = request.data["longitude"]?.double{
-            longtitude = longDouble
-        }
-        let owner = try request.user()
-        
-        var book = Book(title: title, isbn: isbn, imgUrl: imgUrl, lat: latitude, long: longtitude, mainuser_id: owner.id!)
-        try book.save()
-        
-        return try JSON(node: book.makeNode())
-        
-    }
-    func myBooks(request: Request) throws -> ResponseRepresentable{
-        let user = try request.user()
-        if let userId = user.id{
-            
-            let books = try Book.query().filter("mainuser_id", userId).all()
-            return try JSON(node: books.makeNode())
-        }
-        
-        return try JSON(node: Book.all().makeNode())
-    }
     
-    
-    func registerJSON(request: Request) throws -> ResponseRepresentable{
-        
-        guard let username = request.json?["username"]?.string, let password = request.json?["password"]?.string else {
-            throw Abort.badRequest
-        }
-
-        let credentials = UsernamePassword(username: username, password: password)
-        
-        do {
-            let user = try MainUser.register(credentials: credentials)
-            
-            return try JSON(node: user.makeNode() )
-            //try request.auth.login(credentials)
-            //change response
-           // return Response(redirect: "/")
-        } catch let e as TurnstileError {
-            return try drop.view.make("register", Node(node: ["flash": e.description]))
-        }
-        
-    }
-    
-    func loginJSON(request: Request) throws -> ResponseRepresentable{
-        guard let username = request.json?["username"]?.string, let password = request.json?["password"]?.string else {
-            throw Abort.badRequest
-        }
-
-        let credentials = UsernamePassword(username: username, password: password)
-        do {
-            let user = try MainUser.authenticate(credentials: credentials)
-            //try request.auth.login(credentials)
-            return try JSON(node: user.makeNode())
-        } catch let e {
-            return try drop.view.make("login", ["flash": "Invalid username or password - \(e)"])
-        }
-    }
     
     
     
 }
-
 // MARK: - Helper Functions
-extension  APIController{
+extension  APIController {
     func findBooks(within distance:Double, from myLat:Double, longitude myLong:Double, completion:([Book])->()){
         
         let radiusOfEarth = 6371.0
