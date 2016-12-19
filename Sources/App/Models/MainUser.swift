@@ -93,11 +93,14 @@ final class MainUser: User{
     }
     
     func makeNode(context: Context) throws -> Node{
+        let books = try self.books()
         return try Node(node:[
             MainUser.idKey :id,
             MainUser.userNameKey: username,
             MainUser.apiKey:apiKeyID,
-            MainUser.apiSecret: apiKeySecret
+            MainUser.apiSecret: apiKeySecret,
+            "books": books.count
+            
             ])
     }
     

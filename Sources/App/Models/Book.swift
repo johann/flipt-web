@@ -68,6 +68,7 @@ final class Book: Model{
         author = try node.extract("author")
         description = try node.extract("description")
         publishYear = try node.extract("publishYear")
+    
  
     }
     
