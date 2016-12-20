@@ -22,6 +22,7 @@ final class MainUser: User{
     var password = ""
     var apiKeyID = URandom().secureToken
     var apiKeySecret = URandom().secureToken
+    var profilePic = ""
     
     
     static func authenticate(credentials: Credentials) throws -> MainUser {
@@ -89,6 +90,7 @@ final class MainUser: User{
         self.password = try node.extract("password")
         self.apiKeyID = try node.extract("api_key_id")
         self.apiKeySecret = try node.extract("api_key_secret")
+        self.profilePic = try node.extract("profilepic") ?? ""
         
     }
     
@@ -99,8 +101,8 @@ final class MainUser: User{
             MainUser.userNameKey: username,
             MainUser.apiKey:apiKeyID,
             MainUser.apiSecret: apiKeySecret,
-            "books": books.count
-            
+            "books": books.count,
+            "profilepic": profilePic
             ])
     }
     
@@ -112,7 +114,7 @@ final class MainUser: User{
             users.string(MainUser.passwordKey)
             users.string(MainUser.apiKey)
             users.string(MainUser.apiSecret)
-            
+            users.string("profilepic")
         }
     }
     

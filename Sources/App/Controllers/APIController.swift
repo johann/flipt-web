@@ -31,6 +31,7 @@ final class APIController {
             api.get("user", Int.self) { request, userId in
                 try self.userbooks(request: request, id: userId)
             }
+            api.post("updatePic", handler: updateProfilePicture)
             
         }
         
@@ -92,6 +93,34 @@ extension APIController {
         } catch let e {
             return try drop.view.make("login", ["flash": "Invalid username or password - \(e)"])
         }
+    }
+}
+
+//MARK:- User Management 
+
+extension APIController {
+    func updateProfilePicture(request:Request) throws -> ResponseRepresentable{
+        var success = false
+        guard let profilePicture = request.json?["profilePic"]?.string else {
+            throw Abort.badRequest
+        }
+        var user = try request.user()
+        let foundUser = try MainUser.query().filter("usernane", user.username).first()
+        guard let myUser = foundUser else {
+            return Abort.badRequest as! ResponseRepresentable
+        }
+        
+        var updatedUser = myUser
+        updatedUser.profilePic = profilePicture
+        do {
+            try updatedUser.save()
+            success = true
+        }catch {
+           success = false
+        }
+        
+        return try JSON(node:["success":success])
+        
     }
 }
 
