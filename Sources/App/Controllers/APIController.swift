@@ -62,17 +62,20 @@ extension APIController {
         guard let username = request.json?["username"]?.string, let password = request.json?["password"]?.string else {
             throw Abort.badRequest
         }
+        print(username)
+        print(password)
         
         let credentials = UsernamePassword(username: username, password: password)
         
         do {
             let user = try MainUser.register(credentials: credentials)
-            
+            print(user)
             return try JSON(node: user.makeNode() )
             //try request.auth.login(credentials)
             //change response
             // return Response(redirect: "/")
         } catch let e as TurnstileError {
+            print(e.description)
             return try drop.view.make("register", Node(node: ["flash": e.description]))
         }
         
@@ -101,17 +104,23 @@ extension APIController {
 extension APIController {
     func updateProfilePicture(request:Request) throws -> ResponseRepresentable{
         var success = false
+        print("running")
+        print(request.json)
         guard let profilePicture = request.json?["profilePic"]?.string else {
             throw Abort.badRequest
         }
+        print(profilePicture)
         var user = try request.user()
-        let foundUser = try MainUser.query().filter("usernane", user.username).first()
+        dump(user)
+        let foundUser = try MainUser.query().filter("username", user.username).first()
+        dump(foundUser)
         guard let myUser = foundUser else {
             return Abort.badRequest as! ResponseRepresentable
         }
         
         var updatedUser = myUser
         updatedUser.profilePic = profilePicture
+        try updatedUser.save()
         do {
             try updatedUser.save()
             success = true

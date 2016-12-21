@@ -70,7 +70,10 @@ final class MainUser: User{
         
         
         if try MainUser.query().filter("username", newUser.username).first() == nil {
+            try print(newUser.makeNode())
+            print("not saved")
             try newUser.save()
+            print("saved")
             return newUser
         }else{
             throw AccountTakenError()
@@ -95,13 +98,13 @@ final class MainUser: User{
     }
     
     func makeNode(context: Context) throws -> Node{
-        let books = try self.books()
+       // let books = try self.books()
         return try Node(node:[
             MainUser.idKey :id,
             MainUser.userNameKey: username,
+            MainUser.passwordKey: password,
             MainUser.apiKey:apiKeyID,
             MainUser.apiSecret: apiKeySecret,
-            "books": books.count,
             "profilepic": profilePic
             ])
     }
@@ -138,8 +141,19 @@ extension Request {
 extension String: Error {}
 
 extension MainUser{
+    // fix
     func books() throws -> [Book]{
-        return try Book.query().filter("mainuser_id", id!).all()
+        if let userId = id {
+            let books = try Book.query().filter("mainuser_id", userId).all()
+            if books.isEmpty {
+                return []
+            } else {
+                return books
+            }
+        }else {
+            return []
+        }
+        
     }
 }
 extension MainUser {
