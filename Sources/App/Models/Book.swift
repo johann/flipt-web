@@ -67,14 +67,14 @@ final class Book: Model{
         publisher = try node.extract("publisher")
         author = try node.extract("author")
         description = try node.extract("description")
-        publishYear = try node.extract("publishYear")
+        publishYear = try node.extract("publishyear")
     
  
     }
     
     
     func makeNode(context: Context) throws -> Node {
-        
+        print("getting called")
         return try Node(node: [
             "id":id,
             "title": title,
