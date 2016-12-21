@@ -49,7 +49,7 @@ final class APIController {
         let booksCount = try Book.query().filter("mainuser_id", userId).all().count
         
         return try JSON(node: ["user":request.user().makeNode(),
-        "books":"\(booksCount)"])
+        "books":booksCount])
     }
     
  
