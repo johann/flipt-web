@@ -260,14 +260,16 @@ extension  APIController {
         
 
         do {
-        
+        // this hits an error when empty double check and write tests
             let books = try Book.query()
-                .filter("mainUser", Filter.Comparison.notEquals, userId)
+                .filter("mainuser_id", Filter.Comparison.notEquals, userId)
                 .filter("lat", Filter.Comparison.greaterThan, minLat)
                 .filter("lat", Filter.Comparison.lessThan, maxLat)
                 .filter("long", Filter.Comparison.greaterThan, minLong)
                 .filter("long", Filter.Comparison.lessThan, maxLong)
                 .all()
+            
+            print(books)
             
             var nearBooks = [Book]()
             for book in books {
