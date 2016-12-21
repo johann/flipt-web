@@ -196,6 +196,12 @@ extension APIController {
     
     func near(request:Request) throws -> ResponseRepresentable{
         // 40.719503, -73.985142
+        let user = try request.user()
+        guard let userId = user.id else { return Abort.badRequest as! ResponseRepresentable }
+        guard let userInt = userId.int else { return Abort.badRequest as! ResponseRepresentable }
+        
+        
+        
         var latitudeRadians = 0.0
         var longitudeRadians = 0.0
         if let latitude = request.data["lat"]?.double, let longitude = request.data["long"]?.double {
@@ -204,7 +210,8 @@ extension APIController {
         }
         
         var foundbooks = [Book]()
-        findBooks(within: 1609, from: latitudeRadians, longitude: longitudeRadians) { (books) in
+        
+        findBooks(userId: userInt, within: 1609, from: latitudeRadians, longitude: longitudeRadians) { (books) in
             foundbooks = books
         }
         
@@ -234,7 +241,7 @@ extension APIController {
 }
 // MARK: - Helper Functions
 extension  APIController {
-    func findBooks(within distance:Double, from myLat:Double, longitude myLong:Double, completion:([Book])->()){
+    func findBooks(userId: Int, within distance:Double, from myLat:Double, longitude myLong:Double, completion:([Book])->()){
         
         let radiusOfEarth = 6371.0
         let angularRadius = distance/radiusOfEarth
@@ -253,8 +260,9 @@ extension  APIController {
         
 
         do {
-            
+        
             let books = try Book.query()
+                .filter("mainUser", Filter.Comparison.notEquals, userId)
                 .filter("lat", Filter.Comparison.greaterThan, minLat)
                 .filter("lat", Filter.Comparison.lessThan, maxLat)
                 .filter("long", Filter.Comparison.greaterThan, minLong)
