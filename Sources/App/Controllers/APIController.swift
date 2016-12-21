@@ -45,8 +45,11 @@ final class APIController {
     //Route Functions
     
     func respond(request: Request) throws -> ResponseRepresentable{
+        let userId = try request.user().id?.int ?? 0
+        let booksCount = try Book.query().filter("mainuser_id", userId).all().count
         
-        return try JSON(node: request.user().makeNode())
+        return try JSON(node: ["user":request.user().makeNode(),
+        "books":"\(booksCount)"])
     }
     
  
