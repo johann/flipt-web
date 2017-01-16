@@ -1,0 +1,17 @@
+#extend("base")
+
+#export("body") {
+
+    #if(authenticated) {
+        <h1>Hi #(account.email)</h1>
+        #loop(books, "book") { <li>#(book.title)</li> }
+
+    }
+    ##else() {
+       
+        <h1><a href="/login">Login</a></h1>
+        <h1><a href="/register">Signup</a></h1>
+
+    }
+
+}

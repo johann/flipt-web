@@ -1,0 +1,14 @@
+Flipt Routes
+
+
+get my books - GET /user/books
+get book with  - GET /book/:bookid
+get user books
+get books near me GET /books/near
+get user - GET user/:userid
+get me - GET user
+create user
+login user
+update user
+post book
+update book

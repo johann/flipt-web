@@ -26,7 +26,7 @@ final class UserController{
         drop.post("login", handler:loginData)
         drop.get("register", handler: register)
         drop.post("register", handler:registerData)
-        drop.get("/logout", handler:logout)
+        drop.post("logout", handler:logout)
     }
     
     func bookIndex(request: Request) throws -> ResponseRepresentable{
@@ -52,16 +52,20 @@ final class UserController{
    
     
     func registerData(request: Request) throws -> ResponseRepresentable{
-        guard let username = request.formURLEncoded?["username"]?.string,
-            let password = request.formURLEncoded?["password"]?.string else {
-                return try drop.view.make("register", ["flash": "Missing username or password"])
+        guard let email = request.formURLEncoded?["email"]?.string,
+            let password = request.formURLEncoded?["password"]?.string, let fullname = request.formURLEncoded?["fullname"]?.string else {
+                return try drop.view.make("register", ["flash": "Missing email or password"])
         }
-        let credentials = UsernamePassword(username: username, password: password)
+        
+        let credentials = UsernamePassword(username: email, password: password)
         
         do {
-            _ = try MainUser.register(credentials: credentials)
-          
-            //try request.auth.login(credentials)
+            _ = try MainUser.register(fullName: fullname, credentials: credentials)
+       
+            print(credentials.username)
+            print(credentials.password)
+            //try request.auth.login(<#T##credentials: Credentials##Credentials#>)
+           try request.auth.login(credentials, persist: true)
             //change response
             return Response(redirect: "/")
         } catch let e as TurnstileError {
@@ -71,14 +75,14 @@ final class UserController{
     }
     
     func loginData(request: Request) throws -> ResponseRepresentable{
-        guard let username = request.formURLEncoded?["username"]?.string,
+        guard let email = request.formURLEncoded?["email"]?.string,
             let password = request.formURLEncoded?["password"]?.string else {
                 return try drop.view.make("login", ["flash": "Missing username or password"])
         }
-        let credentials = UsernamePassword(username: username, password: password)
+        let credentials = UsernamePassword(username: email, password: password)
         do {
             try _ = MainUser.authenticate(credentials: credentials)
-            //try request.auth.login(credentials)
+            try request.auth.login(credentials)
             return Response(redirect: "/")
         } catch _ {
             return try drop.view.make("login", ["flash": "Invalid username or password"])
@@ -93,3 +97,5 @@ final class UserController{
     
     
 }
+
+

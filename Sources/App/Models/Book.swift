@@ -24,6 +24,7 @@ import Foundation
 
 final class Book: Model{
     var id: Node?
+    var bookId: String?
     var exists: Bool = false
     
     
@@ -38,9 +39,12 @@ final class Book: Model{
     var lat:Double
     var long:Double
     
+    
+    var userImg: String = ""
+    
 
     init(title:String, isbn:String,imgUrl:String, lat:Double,long:Double, mainuser_id:Node?, publisher:String, author:String, description:String, publishYear:String){
-        self.id = nil
+        self.bookId = UUID().uuidString
         self.title = title
         self.isbn = isbn
         self.imgUrl = imgUrl
@@ -68,6 +72,7 @@ final class Book: Model{
         author = try node.extract("author")
         description = try node.extract("description")
         publishYear = try node.extract("publishyear")
+        userImg = try node.extract("userimg")
     
  
     }
@@ -77,6 +82,7 @@ final class Book: Model{
         print("getting called")
         return try Node(node: [
             "id":id,
+            "bookId":bookId,
             "title": title,
             "isbn": isbn,
             "imgUrl": imgUrl,
@@ -86,13 +92,15 @@ final class Book: Model{
             "publisher":publisher,
             "author":author,
             "description": description,
-            "publishYear":publishYear
+            "publishYear":publishYear,
+            "userimg": userImg
             ])
     }
     
     static func prepare(_ database: Database) throws {
         try database.create("books"){ books in
             books.id()
+            books.string("bookId")
             books.string("title")
             books.string("isbn")
             books.string("imgUrl")
@@ -103,6 +111,7 @@ final class Book: Model{
             books.string("author")
             books.string("description")
             books.string("publishYear")
+            books.string("userimg")
             
         }
     }
@@ -114,8 +123,8 @@ final class Book: Model{
 }
 
 extension Book {
-    func owner() throws -> Parent<MainUser>{
-        return try parent(mainuser_id)
+    func owner() throws -> MainUser?{
+        return try parent(mainuser_id, nil, MainUser.self).get()
     }
     
     func findOwner() throws -> MainUser? {
@@ -124,6 +133,8 @@ extension Book {
         }
         return nil
     }
+    
+    
     
 }
 
