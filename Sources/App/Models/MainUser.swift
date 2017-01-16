@@ -245,11 +245,11 @@ extension MainUser{
         #endif
     
         if !users.isEmpty {
-            let randomUser = users[randomIndex]
-            let randomNode = randomUser.id
-            return randomNode
+           
+            return Node(randomIndex)
+            
         } else {
-            return nil
+            return Node(1)
         }
         
     }
