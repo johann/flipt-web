@@ -237,10 +237,15 @@ extension MainUser{
     
     static func getRandomId() throws -> Node? {
         let users = try MainUser.query().all()
-        let randomIndex = arc4random_uniform(UInt32(users.count))
-        let randomInt = Int(randomIndex)
+        let randomIndex: Int
+        #if os(Linux)
+            randomIndex = Int(random() % (users.count + 1))
+        #else
+            randomIndex = Int(arc4random_uniform(UInt32(users.count)))
+        #endif
+    
         if !users.isEmpty {
-            let randomUser = users[randomInt]
+            let randomUser = users[randomIndex]
             let randomNode = randomUser.id
             return randomNode
         } else {
