@@ -41,6 +41,7 @@ final class Book: Model{
     
     
     var userImg: String = ""
+    var status: String = ""
     
 
     init(title:String, isbn:String,imgUrl:String, lat:Double,long:Double, mainuser_id:Node?, publisher:String, author:String, description:String, publishYear:String){
@@ -73,6 +74,8 @@ final class Book: Model{
         description = try node.extract("description")
         publishYear = try node.extract("publishyear")
         userImg = try node.extract("userimg")
+        bookId = try node.extract("bookid")
+        //status = try node.extract("status")
     
  
     }
@@ -93,7 +96,8 @@ final class Book: Model{
             "author":author,
             "description": description,
             "publishYear":publishYear,
-            "userimg": userImg
+            "userimg": userImg//,
+            //"status": status
             ])
     }
     
@@ -111,8 +115,9 @@ final class Book: Model{
             books.string("author")
             books.string("description")
             books.string("publishYear")
-            books.string("userimg")
-            
+            books.string("userimg", length: 255, optional: true)
+            books.string("status", length: 255, optional: true)
+
         }
     }
     

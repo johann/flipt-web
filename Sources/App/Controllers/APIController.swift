@@ -17,6 +17,19 @@ import TurnstileCrypto
 import TurnstileWeb
 import Fluent
 
+
+//user/books -> GET my books
+//add book -> POST add book
+//books/search -> Get search
+//sendbook -> POST send as data bookid and recipient
+//book/:bookid  -> POST update book send data
+//user -> GET get user
+//books/near -> GET near books
+//user/:userid -> GET user
+//updatePic -> POST update profilePicture
+//user -> POST update user
+
+
 final class APIController {
     
     let protect = ProtectMiddleware(error: Abort.custom(status: .unauthorized, message: "Unauthorized"))
@@ -27,24 +40,33 @@ final class APIController {
         drop.grouped(BasicAuthenticationMiddleware(), protect).group("api") { api in
             //Books
             
+            //user/books -> GET my books
+            //add book -> POST add book
+            //books/search -> Get search
+            //sendbook -> POST send as data bookid and recipient
+            //book/:bookid  -> POST update book send data 
+            //user -> GET get user
+            //books/near -> GET near books
+            //user/:userid -> GET user
+            //updatePic -> POST update profilePicture
+            //user -> POST update user
             api.get("user", "books", handler: myBooks) //should be books/me
             api.post("book", handler: addBook)
             api.get("books","search", handler:search)
-            api.post("sendbook", String.self) { request, bookId in
-                try self.sendBook(request: request, bookId: bookId)
-            }
+            api.post("sendbook", handler:sendBook)
             api.post("book", String.self) { request, bookId in
                 try self.updateBook(request: request, bookId: bookId)
                 
             }
-
-            api.get("me", handler: respond)
-            api.get("near", handler:near)
-            api.get("user", Int.self){ request, userId in
-                try self.findUserBy(id: userId)
+            api.get("book", String.self) { request, bookId in
+                try self.findBookBy(id: bookId)
             }
+
+            api.get("user", handler: respond)
+            api.get("books","near", handler:near)
             api.get("user", String.self) { request, userId in
-                try self.findUsersBy(userID: userId)
+                
+                try self.findUsersBy(request:request, userID: userId)
             }
             api.post("updatePic", handler: updateProfilePicture) //create update for user
             
@@ -64,6 +86,7 @@ final class APIController {
     func updateUser(request: Request) throws -> ResponseRepresentable {
 
         var user = try request.user()
+        request.data["userid"]?.string.map{ user.userId = $0 }
         request.data["username"]?.string.map{ user.username = $0 }
         request.data["profilePic"]?.string.map{ user.profilePic = $0 }
         request.data["email"]?.string.map{ user.email = $0 }
@@ -75,11 +98,11 @@ final class APIController {
         return try JSON(node:["success":"ok"])
         
     }
-    
+    ///find way to check for nothing sent
     func updateBook(request: Request, bookId:String) throws -> ResponseRepresentable {
         //get the right book from user
-        let isbn = request.data["isbn"]?.string ?? ""
-        var book = try request.user().books().filter({ $0.isbn == isbn }).first
+    
+        var book = try request.user().books().filter({ $0.bookId == bookId }).first
         
         request.data["title"]?.string.map{ book?.title = $0 }
         request.data["imgurl"]?.string.map{ book?.imgUrl = $0 }
@@ -89,7 +112,7 @@ final class APIController {
         request.data["author"]?.string.map{ book?.author = $0 }
         request.data["description"]?.string.map{ book?.description = $0 }
         request.data["publishYear"]?.string.map{ book?.publishYear = $0 }
-        request.data["userImg"]?.string.map{ book?.userImg = $0 }
+        request.data["userimg"]?.string.map{ book?.userImg = $0 }
         try book?.save()
         
         return try JSON(node:["success":"ok"])
@@ -97,10 +120,10 @@ final class APIController {
     
     
     
-    func sendBook(request: Request, bookId:String) throws -> ResponseRepresentable {
+    func sendBook(request: Request) throws -> ResponseRepresentable {
         //get the right book from user
-        let isbn = request.data["isbn"]?.string ?? ""
-        var book = try request.user().books().filter({ $0.isbn == isbn }).first
+        let bookId = request.data["bookid"]?.string ?? ""
+        var book = try request.user().books().filter({ $0.bookId == bookId }).first
         guard let recipient = request.data["recipient"]?.string else {
             return "Bad Request"
         }
@@ -125,13 +148,10 @@ final class APIController {
     func respond(request: Request) throws -> ResponseRepresentable{
         //        let userId = try request.user().id?.int ?? 0
         //
-        let userName = try request.user().username
-        print(userName)
-        let user = try MainUser.query().filter("username", userName).all()[0]
-        let userId = user.id?.int ?? 0
-        //
+    
+        let userId = try request.user().id?.int
         
-        let booksCount = try Book.query().filter("mainuser_id", userId).all().count
+        let booksCount = try Book.query().filter("mainuser_id", userId!).all().count
         print(booksCount)
         //        print(booksCount)
         
@@ -170,12 +190,12 @@ extension APIController {
         
         let username = request.data["username"]?.string ?? ""
         let profilePic = request.data["profilePic"]?.string ?? ""
-        let fullName = request.data["fullName"]?.string ?? ""
+        let fullName = request.data["fullname"]?.string ?? ""
         let userid = request.data["userid"]?.string ?? ""
         var firstName = ""
         var lastName = ""
         if !fullName.isEmpty {
-            var fullNameArray = fullName.components(separatedBy: " ")
+            let fullNameArray = fullName.components(separatedBy: " ")
             firstName = fullNameArray.first!
             lastName = fullNameArray.last ?? ""
             
@@ -193,6 +213,7 @@ extension APIController {
             user.lastName = lastName
             user.phoneNumber = phoneNumber
             user.userId = userid
+            user.profilePic = profilePic
             try user.save()
             return try JSON(node: ["status": "ok", "user":user.makeNode()] )
 
@@ -264,24 +285,47 @@ extension APIController {
 extension APIController {
     //MARK:- User Books
     
-    func findUserBy(id:Int) throws -> ResponseRepresentable {
-        guard let user = try MainUser.query().filter("id", id).first() else {
-            return "User Not Found"
+    
+    func findBookBy(id:String) throws -> ResponseRepresentable {
+        guard let book = try Book.query().filter("bookid", id).all().first else {
+            return "Book Not Found"
         }
-        let books = try user.books()
-        var node = try Node(["books":books.makeNode()])
-        node["user"] = try user.makeNode()
-        return try JSON(node: node)
+        
+        return try JSON(node: book.makeNode())
     }
     
-    func findUsersBy(userID id:String) throws -> ResponseRepresentable {
-        guard let user = try MainUser.query().filter("userid", id).first() else {
-            return "User Not Found"
+
+//    http://localhost:8080/api/user/2?type=id
+//    http://localhost:8080/api/user/2?type=userid
+
+    
+    func findUsersBy(request:Request, userID id:String) throws -> ResponseRepresentable {
+        print("running")
+        guard let queryType = request.query?["type"]?.string else {
+            return "No query submitted"
         }
-        let books = try user.books()
-        var node = try Node(["books":books.makeNode()])
-        node["user"] = try user.makeNode()
-        return try JSON(node: node)
+        let user: MainUser!
+        
+        if queryType == "userid" {
+            guard let user = try MainUser.query().filter("userid", id).first() else {
+                return "User Not Found"
+            }
+            let books = try user.books()
+            var node = try Node(["books":books.makeNode()])
+            node["user"] = try user.makeNode()
+            return try JSON(node: node)
+        } else if queryType == "id" {
+            guard let user = try MainUser.query().filter("id", id).first() else {
+                return "User Not Found"
+            }
+            let books = try user.books()
+            var node = try Node(["books":books.makeNode()])
+            node["user"] = try user.makeNode()
+            return try JSON(node: node)
+        } else {
+            return "No query"
+        }
+
     }
     func userbooks(request:Request, id:Int) throws -> ResponseRepresentable{
         let books = try Book.query().filter("mainuser_id", id).all()

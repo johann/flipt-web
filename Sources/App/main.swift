@@ -18,7 +18,9 @@ let drop = Droplet()
 drop.middleware += auth
 drop.middleware += TrustProxyMiddleware()
 drop.database = database
+
 try drop.addProvider(VaporPostgreSQL.Provider.self)
+
 drop.preparations += Book.self
 drop.preparations += MainUser.self
 
@@ -28,12 +30,31 @@ drop.preparations += MainUser.self
 
 let bookController = BookController()
 bookController.addRoutes(drop: drop)
+
+
 let userController = UserController()
 userController.addRoutes(drop: drop)
+
+
 let apiController = APIController()
 apiController.addRoutes(drop: drop)
 
 
+
+drop.get("allbooks") { request in
+    
+    
+    let books = try Book.query().all()
+    
+    return try JSON(node: ["books": books.makeNode()])
+}
+
+
+drop.get("jimbo") { request in
+    
+    return "Hey Jim"
+    
+}
 
 
 

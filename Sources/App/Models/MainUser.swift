@@ -153,7 +153,7 @@ final class MainUser: User{
         self.profilePic = try node.extract("profilepic") ?? ""
         self.phoneNumber = try node.extract("phonenumber")
         self.firstName = try node.extract("firstname")
-        self.lastName = try node.extract("lastName")
+        self.lastName = try node.extract("lastname")
         
     }
     
@@ -179,14 +179,14 @@ final class MainUser: User{
         try database.create("mainusers"){ users in
             users.id()
             users.string(MainUser.emailKey)
-            users.string(MainUser.userNameKey)
+            users.string(MainUser.userNameKey, length: 255, optional: true)
             users.string(MainUser.passwordKey)
             users.string(MainUser.apiKey)
             users.string(MainUser.apiSecret)
-            users.string(MainUser.profilePic)
-            users.string(MainUser.phonenumberKey)
-            users.string(MainUser.firstnameKey)
-            users.string(MainUser.lastnameKey)
+            users.string(MainUser.profilePic, length: 255, optional: true)
+            users.string(MainUser.phonenumberKey, length: 255, optional: true)
+            users.string(MainUser.firstnameKey, length: 255, optional: true)
+            users.string(MainUser.lastnameKey, length: 255, optional: true)
             users.string(MainUser.userId, length: 255, optional: true)
        
         }
