@@ -40,16 +40,6 @@ final class APIController {
         drop.grouped(BasicAuthenticationMiddleware(), protect).group("api") { api in
             //Books
             
-            //user/books -> GET my books
-            //add book -> POST add book
-            //books/search -> Get search
-            //sendbook -> POST send as data bookid and recipient
-            //book/:bookid  -> POST update book send data 
-            //user -> GET get user
-            //books/near -> GET near books
-            //user/:userid -> GET user
-            //updatePic -> POST update profilePicture
-            //user -> POST update user
             api.get("user", "books", handler: myBooks) //should be books/me
             api.post("book", handler: addBook)
             api.get("books","search", handler:search)
@@ -353,13 +343,23 @@ extension APIController {
     func addBook(request: Request) throws -> ResponseRepresentable{
         
         guard let isbn = request.data["isbn"]?.string else {
-            return try JSON(node: ["status":"ISBN Mi"])
+            return try JSON(node: ["status":"ISBN Missing"])
         }
-        let isbnCheck = try MainUser.query().filter("isbn",  isbn).all().isEmpty
+
+        let user = try request.user()
+        let books = try user.books()
+//        let isbnCheck =  books.contains(where: { (book) -> Bool in
+//            if book.isbn == isbn {
+//                return true
+//            } else {
+//                return false
+//            }
+//        })
+        //let isbnCheck = try MainUser.query().filter("isbn",  isbn).all().isEmpty
         // checking if user already has the book
-        if isbnCheck {
+       
             let title = request.data["title"]?.string ?? ""
-            let imgUrl = request.data["imgurl"]?.string ?? ""
+            let imgUrl = request.data["imgUrl"]?.string ?? ""
             let latitude = request.data["latitude"]?.double ?? 0.0
             let longitude = request.data["longitude"]?.double ?? 0.0
             let publisher = request.data["publisher"]?.string ?? ""
@@ -372,9 +372,9 @@ extension APIController {
             try book.save()
             
             return try JSON(node: book.makeNode())
-        } else {
-            return try JSON(node: ["status":"Book Already Exists"])
-        }
+//        } else {
+//            return try JSON(node: ["status":"Book Already Exists"])
+//        }
         
         
         
