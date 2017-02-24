@@ -4,7 +4,7 @@
 
     #if(authenticated) {
         <h1>Hi #(account.email)</h1>
-        #loop(books, "book") { <li>#(book.title)</li> }
+#loop(books, "book") { <li>#(book.title)<img src="#(book.imgUrl)" alt="" height="42" width="42"></li> }
 
     }
     ##else() {

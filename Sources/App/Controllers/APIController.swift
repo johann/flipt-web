@@ -202,25 +202,40 @@ extension APIController {
         }
         let phoneNumber = request.data["phoneNumber"]?.string ?? ""
         
-        let credentials = UsernamePassword(username: email, password: password)
+       // let credentials = UsernamePassword(username: email, password: password)
+       
         
-        do {
-            var user = try MainUser.register(credentials: credentials) as! MainUser
-            try request.auth.login(credentials)
-            user.username = username
-            user.fullname = fullName
-            user.firstName = firstName
-            user.lastName = lastName
-            user.phoneNumber = phoneNumber
-            user.userId = userid
-            user.profilePic = profilePic
-            try user.save()
-            return try JSON(node: ["status": "ok", "user":user.makeNode()] )
-
-        } catch let e as TurnstileError {
-            print(e.description)
-            return try JSON(node:["status": e.description])
-        }
+            
+            do {
+                
+                if !(username == "") && !(email == "") && !(password == "") {
+                    print("email - \(email)")
+                    print("username - \(username)")
+                    let credentials = UsernamePassword(username: email, password: password)
+                    var user = try MainUser.register(fullName: fullName, username: username, credentials: credentials) as! MainUser
+                    // var user = try MainUser.register(credentials: credentials) as! MainUser
+                    try request.auth.login(credentials)
+                    user.username = username
+                    user.fullname = fullName
+                    user.firstName = firstName
+                    user.lastName = lastName
+                    user.phoneNumber = phoneNumber
+                    user.userId = userid
+                    user.profilePic = profilePic
+                    try user.save()
+                    return try JSON(node: ["status": "ok", "user":user.makeNode()] )
+                } else {
+                    throw InvalidCredentials()
+                }
+                
+            } catch let e as TurnstileError {
+                print(e.description)
+                return try JSON(node:["status": e.description])
+            }
+       
+        
+        
+       
         
     }
     

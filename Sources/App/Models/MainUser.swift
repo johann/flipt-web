@@ -66,33 +66,43 @@ final class MainUser: User{
     }
     
     
-    static func register(fullName: String, credentials: Credentials) throws -> User{
+    static func register(fullName: String, username: String, credentials: Credentials) throws -> User{
         var newUser: MainUser
     
         switch credentials {
         case let credentials as UsernamePassword:
+            print("using basic credentials")
             newUser = MainUser(credentials: credentials)
 
+//        case let credentials as EmailUsernamePassword:
+//            print("using special new one")
+//            newUser = MainUser(emailcredentials: credentials)
         default:
             throw UnsupportedCredentialsError()
         }
         
-        if try MainUser.query().filter("email", newUser.username).first() == nil {
-            
-            let fullnameArray = fullName.components(separatedBy: " ")
-            print(fullnameArray)
-            if !fullnameArray.isEmpty {
-                newUser.firstName = fullnameArray.first!
-                newUser.lastName = fullnameArray.last ?? " "
+        
+        print("Email - \(newUser.email)")
+        if try MainUser.query().filter("email", newUser.email).first() == nil {
+            if try MainUser.query().filter("username", username).first() == nil  {
+                let fullnameArray = fullName.components(separatedBy: " ")
+                if !fullnameArray.isEmpty {
+                    newUser.firstName = fullnameArray.first!
+                    newUser.lastName = fullnameArray.last ?? " "
+                } else {
+                    // find better error to throw
+                    throw UnsupportedCredentialsError()
+                }
+                
+                newUser.username = username
+                try newUser.save()
             } else {
-                // find better error to throw
-                throw UnsupportedCredentialsError()
+                throw UsernameTakenError()
             }
             
-        
-            try newUser.save()
             
         }else{
+            
             throw AccountTakenError()
         }
 
@@ -108,9 +118,10 @@ final class MainUser: User{
         default:
             throw UnsupportedCredentialsError()
         }
+        print("running regular register")
+        print("Email - \(newUser.email)")
         
-        
-        if try MainUser.query().filter("email", newUser.username).first() == nil {
+        if try MainUser.query().filter("email", newUser.email).first() == nil {
             try print(newUser.makeNode())
             
             try newUser.save()
@@ -123,9 +134,16 @@ final class MainUser: User{
     
     //this is going to cause problems
     init(credentials: UsernamePassword) {
+        print(credentials)
         self.email = credentials.username
         self.password = BCrypt.hash(password: credentials.password)
     }
+    
+//    init(emailcredentials: EmailUsernamePassword) {
+//        self.email = emailcredentials.email
+//        self.username = emailcredentials.username
+//        self.password = BCrypt.hash(password: emailcredentials.password)
+//    }
     
 
     init(firstName:String, lastName:String, username:String) {
@@ -268,3 +286,4 @@ extension MainUser {
     static let lastnameKey = "lastname"
     
 }
+

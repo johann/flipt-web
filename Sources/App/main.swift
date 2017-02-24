@@ -98,7 +98,7 @@ drop.get("seedBooks") { request in
     
 //    
     
-    let url = "https://www.googleapis.com/books/v1/volumes?q=subject:fiction&maxResults=40"
+    let url = "https://www.googleapis.com/books/v1/volumes?q=subject:suspense&maxResults=40"
     let response = try drop.client.get(url)
     var petArray = [Book]()
     let next = response.data["data","after"]?.string ?? ""

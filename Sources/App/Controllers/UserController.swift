@@ -53,14 +53,14 @@ final class UserController{
     
     func registerData(request: Request) throws -> ResponseRepresentable{
         guard let email = request.formURLEncoded?["email"]?.string,
-            let password = request.formURLEncoded?["password"]?.string, let fullname = request.formURLEncoded?["fullname"]?.string else {
+            let password = request.formURLEncoded?["password"]?.string, let fullname = request.formURLEncoded?["fullname"]?.string, let username = request.formURLEncoded?["username"]?.string else {
                 return try drop.view.make("register", ["flash": "Missing email or password"])
         }
         
         let credentials = UsernamePassword(username: email, password: password)
         
         do {
-            _ = try MainUser.register(fullName: fullname, credentials: credentials)
+            _ = try MainUser.register(fullName: fullname, username: username, credentials: credentials)
        
             print(credentials.username)
             print(credentials.password)
