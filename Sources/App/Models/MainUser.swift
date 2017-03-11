@@ -14,7 +14,7 @@ import TurnstileCrypto
 import TurnstileWeb
 import Auth
 
-final class MainUser: User{
+final class MainUser: User {
     var exists: Bool = false
     var id: Node?
     var userId: String?
