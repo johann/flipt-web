@@ -35,8 +35,6 @@ final class MainUser: User {
         
         switch credentials{
         case let credentials as UsernamePassword:
-            print(credentials.username)
-            print(credentials.password)
             let fetchedUser = try MainUser.query().filter("email", credentials.username).first()
             
             if let password = fetchedUser?.password,
